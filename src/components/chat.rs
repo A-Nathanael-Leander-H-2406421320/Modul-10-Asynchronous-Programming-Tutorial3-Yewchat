@@ -64,7 +64,7 @@ pub fn chat() -> Html {
         let username = username.clone();
 
         use_effect_with((), move |_| {
-            let ws = WebSocket::open("ws://localhost:8080").expect("Gagal membuka WebSocket");
+            let ws = WebSocket::open("ws://127.0.0.1:8080").expect("Gagal membuka WebSocket");
             let (mut write, mut read) = ws.split();
 
             let register_msg = WebSocketMessage {

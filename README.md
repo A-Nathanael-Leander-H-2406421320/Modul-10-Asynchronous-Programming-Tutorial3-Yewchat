@@ -61,3 +61,25 @@ To elevate the user experience and explore the full potential of Yew and WebAsse
     - The image is drawn onto an in-memory `HtmlCanvasElement`. The Rust logic calculates the aspect ratio to downscale the image so that its maximum dimension does not exceed 800 pixels.
     - The canvas exports the resized image as a JPEG Data URL (Base64) with a quality factor of 0.7, drastically reducing the file size (typically well under 500 KB).
     - The resulting Base64 string is safely sent via the WebSocket Message payload.
+
+## Bonus: Refactoring the Broadcast Chat Server (Tutorial 2) to Support YewChat
+
+**How it is done:**
+
+To make the Rust-based WebSocket server from Tutorial 2 fully compatible with the modern YewChat client, I completely refactored its message-handling logic to act as a robust JSON relay.
+
+- I added `serde` and `serde_json` to the server's Cargo.toml.
+
+- I defined identical Rust structs (`WebSocketMessage`, `MsgTypes`, and `MessageData`) on the server side to match the exact JSON schema expected by the YewChat client.
+
+- I implemented an `Arc<Mutex<HashMap<SocketAddr, String>>>` to keep track of active connections and bind each socket to a registered username.
+
+- Instead of broadcasting plain text, the server now parses incoming JSON. When it receives a `Message` event, it extracts the content (whether it's text, emojis, or Base64 image data), encapsulates it inside a `MessageData` object alongside the sender's name, wraps it back into a `WebSocketMessage`, and safely broadcasts it to all connected clients.
+
+**Why it is a successful change:**
+This change is highly successful because it bridges the gap between the backend and our newly modernized frontend seamlessly. Unlike the provided SimpleWebsocketServer (NodeJS) which crashed when receiving unexpected null arrays, this Rust server strictly validates incoming payloads using `serde`. It successfully handles complex data types—including the Base64 image strings from our creative client-side compression feature—without any performance degradation or data corruption. The entire application is now a unified, Full-Stack Asynchronous Rust architecture.
+
+**Opinion: JavaScript Version vs. Rust Version**
+I strongly prefer the Rust version. The primary reason is its unmatched performance and strict type safety. Dealing with the JavaScript server was tedious. JavaScript is highly prone to sudden runtime errors (such as the classic `TypeError: Cannot read properties of null`) that can instantly crash the entire server without warning. This is made worse with having to deal with `npm` dependencies and their often unpredictable updates.
+
+In contrast, Rust forces you to handle every possible state (like `Option::None` or `Result::Err`) at compile time. By the time the Rust server compiles successfully, I have the absolute confidence that it will run safely, predictably, and efficiently without randomly breaking mid-execution. Rust eliminates the messiness of JavaScript, making the development process much more robust and reliable.
